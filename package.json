@@ -15,7 +15,8 @@
     "aedes": "^0.51.0",
     "debug": "^2.3.2",
     "jsonschema": "1.2.6",
-    "mqtt": "^5.3.5"
+    "mqtt": "^5.3.5",
+    "mqtt-nedb-store": "^0.1.0"
   },
   "optionalDependencies": {
     "mdns": "^2.3.3"
