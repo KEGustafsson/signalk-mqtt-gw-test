@@ -17,7 +17,6 @@
 const id = 'signalk-mqtt-gw-test';
 const debug = require('debug')(id);
 const mqtt = require('mqtt');
-const NeDBStore = require('mqtt-nedb-store');
 
 module.exports = function(app) {
   var plugin = {
@@ -103,20 +102,6 @@ module.exports = function(app) {
     if (options.runLocalServer) {
       startLocalServer(options, plugin.onStop);
     }
-    if (options.sendToRemote) {
-      const manager = NeDBStore(app.getDataDirPath());
-      const client = mqtt.connect(options.remoteHost, {
-        rejectUnauthorized: options.rejectUnauthorized,
-        reconnectPeriod: 60000,
-        clientId: app.selfId,
-        outgoingStore: manager.outgoing,
-        username: options.username,
-        password: options.password
-      });
-      client.on('error', (err) => console.error(err))
-      startSending(options, client, plugin.onStop);
-      plugin.onStop.push(_ => client.end());
-    }
     started = true;
   };
 
@@ -172,6 +157,7 @@ module.exports = function(app) {
 
     server.on('clientConnected', function(client) {
       console.log('client connected', client.id);
+      aedes.publish
     });
 
     server.on('published', function(packet, client) {
