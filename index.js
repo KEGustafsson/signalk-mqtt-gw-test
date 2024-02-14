@@ -71,7 +71,7 @@ module.exports = function(app) {
   function startLocalServer(options, onStop) {
     //Start local Aedes broker server
     const aedes = require('aedes')();
-    const server = require('net').createServer(aedes.handle)
+    server = require('net').createServer(aedes.handle)
     const port = options.port || 1883;
 
     //Publish all deltas to local broker
@@ -79,7 +79,7 @@ module.exports = function(app) {
     mqttClient.on('connect', function() {
       console.log('connected to local mqtt server')
       app.signalk.on('delta', function(delta) {
-        mqttClient.publish('signalk/delta', JSON.stringify(delta))
+        mqttClient.publish('signalk/delta', publishLocalDelta(delta))
       })
     })  
 
