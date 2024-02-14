@@ -14,7 +14,7 @@
  * limitations under the License.
 */
 
-const id = 'signalk-mqtt-gw';
+const id = 'signalk-mqtt-gw-test';
 const debug = require('debug')(id);
 const mqtt = require('mqtt');
 
