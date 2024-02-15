@@ -1,7 +1,6 @@
 /*
  * Copyright 2016 Teppo Kurki <teppo.kurki@iki.fi>
- * Copyright 2024 Karl-Erik Gustafsson
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,38 +17,18 @@
 const id = 'signalk-mqtt-gw-test';
 const debug = require('debug')(id);
 
-module.exports = function createPlugin(app) {
-  const plugin = {};
+module.exports = function(app) {
+  var plugin = {
+    unsubscribes: [],
+  };
+  var server
+  var aedes
+
   plugin.id = id;
-  plugin.name = 'SignalK AisStream';
-  plugin.description = 'Track the worlds vessels (AIS) via websocket. Easy to configure and use.';
+  plugin.name = 'Signal K - MQTT Gateway';
+  plugin.description =
+    'plugin that provides gateway functionality between Signal K and MQTT';
 
-  var server; 
-  var aedes;
-  var unsubscribes = [];
-  const setStatus = app.setPluginStatus || app.setProviderStatus;
-  
-  plugin.start = function (options) {
-    app.debug("Aedes MQTT Plugin Started");
-    plugin.onStop = [];
-
-    if (options.runLocalServer) {
-      startLocalServer(options, plugin.onStop);
-    }
-    started = true;
-  };
-
-  plugin.stop = function stop() {
-    unsubscribes.forEach((f) => f());
-    unsubscribes = [];
-    if (server) {
-      server.close();
-      aedes.close();
-    }
-    socket = null;
-    app.debug("Aedes MQTT Plugin Stopped");
-  };
-  
   plugin.schema = {
     title: 'Signal K - MQTT Gateway',
     type: 'object',
@@ -67,6 +46,31 @@ module.exports = function createPlugin(app) {
       },
     },
   };
+
+  var started = false;
+  var ad;
+
+  plugin.onStop = [];
+
+  plugin.start = function(options) {
+    plugin.onStop = [];
+
+    if (options.runLocalServer) {
+      startLocalServer(options, plugin.onStop);
+    }
+
+    started = true;
+  };
+
+  plugin.stop = function() {
+    plugin.onStop.forEach(f => f());
+    server.close()
+    if (ad) {
+      ad.stop();
+    }
+  };
+
+  return plugin;
 
   function startLocalServer(options, onStop) {
     aedes = require('aedes')();
@@ -101,10 +105,7 @@ module.exports = function createPlugin(app) {
       console.log(
         'Aedes MQTT server is up and running on port ' + options.port
       );
-      onStop.push(_ => { 
-        server.close()
-        aedes.close()
-      });
+      onStop.push(_ => { server.close() });
     }
   }
 
@@ -132,6 +133,4 @@ module.exports = function createPlugin(app) {
     }
     return value.toString()
   }
-
-  return plugin;
 };
