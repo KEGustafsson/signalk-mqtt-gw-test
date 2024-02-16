@@ -34,9 +34,7 @@ module.exports = function createPlugin(app) {
 
   var server; 
   var aedes;
-  var manager;
   var ad;
-  var unsubscribes = [];
   const setStatus = app.setPluginStatus || app.setProviderStatus;
   
   plugin.start = function (options) {
@@ -47,49 +45,36 @@ module.exports = function createPlugin(app) {
       startLocalServer(options, plugin.onStop);
     }
     if (options.sendToRemote) {
-      manager = new Manager(app.getDataDirPath());
+      const manager = new Manager(app.getDataDirPath());
       startMqttClient(manager,plugin.onStop);
     }
-
     async function startMqttClient(manager) {
       await manager.open();
       const client = mqtt.connect(options.remoteHost, {
         rejectUnauthorized: options.rejectUnauthorized,
         reconnectPeriod: 60000,
         clientId: app.selfId,
-        outgoingStore: manager.outgoing,
+        incomingStore: manager.incoming,
+		    outgoingStore: manager.outgoing,
         username: options.username,
         password: options.password
       });
       client.on('error', (err) => console.error(err))
       startSending(options, client, plugin.onStop);
       plugin.onStop.push(_ => client.end());
-    }
-
+    }    
     started = true;
   };
 
   plugin.stop = function stop() {
-    unsubscribes.forEach((f) => f());
-    unsubscribes = [];
+    plugin.onStop.forEach(f => f());
     if (server) {
       server.close();
       aedes.close();
     }
-    if (client) {
-      manager.close();
-    }
     if (ad) {
       ad.stop();
     }
-    /*
-    if (plugin.onStop) {
-      plugin.onStop.forEach(f => f());
-    }
-    if (client) {
-      client.end();
-    }
-    */
     app.debug("Aedes MQTT Plugin Stopped");
   };
   
