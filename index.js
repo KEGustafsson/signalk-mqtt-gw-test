@@ -58,6 +58,9 @@ module.exports = function createPlugin(app) {
         password: options.password
       });
       client.on('error', (err) => console.error(err))
+      app.signalk.on('delta', function(delta) {
+        publishLocalDelta(delta, 'client');
+      });
       startSending(options, client, plugin.onStop);
       plugin.onStop.push(_ => client.end());
     }    
@@ -179,7 +182,10 @@ module.exports = function createPlugin(app) {
       //edes.publish({ topic: 'aedes/hello', payload: "I'm broker " + aedes.id })
     })
 
-    app.signalk.on('delta', publishLocalDelta);
+    //app.signalk.on('delta', publishLocalDelta);
+    app.signalk.on('delta', function(delta) {
+      publishLocalDelta(delta, 'aedes');
+    });
     onStop.push(_ => { app.signalk.removeListener('delta', publishLocalDelta) });
 
     server.on('clientConnected', function(client) {
@@ -218,14 +224,14 @@ module.exports = function createPlugin(app) {
     }
   }
 
-  function publishLocalDelta(delta) {
+  function publishLocalDelta(delta, sender) {
     const prefix =
       (delta.context === app.selfContext
         ? 'vessels/self'
         : delta.context.replace('.', '/')) + '/';
     (delta.updates || []).forEach(update => {
       (update.values || []).forEach(pathValue => {
-        aedes.publish({
+        sender.publish({
           topic: prefix + pathValue.path.replace(/\./g, '/'),
           payload:
             pathValue.value === null ? 'null' : toText(pathValue.value),
