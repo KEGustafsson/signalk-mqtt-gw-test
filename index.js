@@ -25,7 +25,9 @@ const { Manager } = require("mqtt-jsonl-store");
 const NeDBStore = require('mqtt-nedb-store');
 
 module.exports = function createPlugin(app) {
-  const plugin = {};
+  var plugin = {
+    unsubscribes: [],
+  };
   plugin.id = id;
   plugin.name = 'Signal K - MQTT Gateway';
   plugin.description = 'Plugin that provides gateway functionality between Signal K and MQTT';
@@ -44,11 +46,11 @@ module.exports = function createPlugin(app) {
       startLocalServer(options, plugin.onStop);
     }
     if (options.sendToRemote) {
-      const manager = NeDBStore(app.getDataDirPath());
-      startMqttClient();
+      const manager = new Manager(app.getDataDirPath());
+      startMqttClient(manager,plugin.onStop);
     }
 
-    async function startMqttClient() {
+    async function startMqttClient(manager) {
       await manager.open();
       const client = mqtt.connect(options.remoteHost, {
         rejectUnauthorized: options.rejectUnauthorized,
@@ -76,12 +78,14 @@ module.exports = function createPlugin(app) {
     if (ad) {
       ad.stop();
     }
+    /*
     if (plugin.onStop) {
       plugin.onStop.forEach(f => f());
     }
     if (client) {
       client.end();
     }
+    */
     app.debug("Aedes MQTT Plugin Stopped");
   };
   
