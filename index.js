@@ -17,8 +17,8 @@
 
 const id = 'signalk-mqtt-gw-test';
 const debug = require('debug')(id);
-const aedes = require('aedes')();
-const server = require('net').createServer(aedes.handle)
+//const aedes = require('aedes')();
+//const server = require('net').createServer(aedes.handle)
 const mqtt = require('mqtt');
 const { Manager } = require("mqtt-jsonl-store");
 
@@ -32,8 +32,9 @@ module.exports = function createPlugin(app) {
   plugin.name = 'Signal K - MQTT Gateway';
   plugin.description = 'Plugin that provides gateway functionality between Signal K and MQTT';
 
-  //var server; 
-  //var aedes;
+  var server; 
+  var aedes;
+  var manager;
   var ad;
   var unsubscribes = [];
   const setStatus = app.setPluginStatus || app.setProviderStatus;
@@ -46,7 +47,7 @@ module.exports = function createPlugin(app) {
       startLocalServer(options, plugin.onStop);
     }
     if (options.sendToRemote) {
-      const manager = new Manager(app.getDataDirPath());
+      manager = new Manager(app.getDataDirPath());
       startMqttClient(manager,plugin.onStop);
     }
 
@@ -74,6 +75,9 @@ module.exports = function createPlugin(app) {
     if (server) {
       server.close();
       aedes.close();
+    }
+    if (client) {
+      manager.close();
     }
     if (ad) {
       ad.stop();
@@ -183,6 +187,8 @@ module.exports = function createPlugin(app) {
   }
 
   function startLocalServer(options, onStop) {
+    aedes = require('aedes')();
+    server = require('net').createServer(aedes.handle)
     const port = options.port || 1883;
 
     server.listen(port, function() {
