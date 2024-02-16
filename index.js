@@ -22,8 +22,6 @@ const debug = require('debug')(id);
 const mqtt = require('mqtt');
 const { Manager } = require("mqtt-jsonl-store");
 
-const NeDBStore = require('mqtt-nedb-store');
-
 module.exports = function createPlugin(app) {
   var plugin = {
     unsubscribes: [],
