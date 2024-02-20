@@ -59,7 +59,7 @@ module.exports = function createPlugin(app) {
       });
       client.on('error', (err) => console.error(err))
 
-      if (options.selectedOption === 'vessel.self delta in separated topics') {
+      if (options.selectedOption === '1) vessel.self') {
         const deltaHandler = function(delta) {
           publishRemoteDelta(delta, client, false);
         };
@@ -70,7 +70,7 @@ module.exports = function createPlugin(app) {
           app.signalk.removeListener('delta', deltaHandler);
         });      
       } 
-      else if (options.selectedOption === 'all delta in separated topics') {
+      else if (options.selectedOption === '2) all deltas') {
         const deltaHandler = function(delta) {
           publishRemoteDelta(delta, client, true);
         };
@@ -81,14 +81,14 @@ module.exports = function createPlugin(app) {
           app.signalk.removeListener('delta', deltaHandler);
         });
       } 
-      else if (options.selectedOption === 'self paths from list below in JSON format') {
+      else if (options.selectedOption === '3) self paths in JSON format') {
         startSending(options, client, plugin.onStop);
         plugin.onStop.push(_ => {
           client.end()
           stopManager()
         });
       } 
-      else if (options.selectedOption === 'all data in both formats') {
+      else if (options.selectedOption === '4) all deltas + JSON') {
         startSending(options, client, plugin.onStop);
         const deltaHandler = function(delta) {
           publishRemoteDelta(delta, client, true);
@@ -144,12 +144,6 @@ module.exports = function createPlugin(app) {
         title: 'Send data for paths listed below to remote server',
         default: false,
       },
-      selectedOption: {
-        type: "string",
-        enum: ['vessel.self delta in separated topics', 'all delta in separated topics', 'self paths from list below in JSON format', 'all data in both formats'],
-        description: 'Select the type of data to send to the remote server',
-        default: 'vessel.self delta in separated topics'
-      },
       remoteHost: {
         type: 'string',
         title: 'MQTT server Url (starts with mqtt/mqtts)',
@@ -170,9 +164,16 @@ module.exports = function createPlugin(app) {
         default: false,
         title: "Reject self signed and invalid server certificates"
       },
+      selectedOption: {
+        type: "string",
+        title: "Data to send to remote server",
+        enum: ["1) vessel.self", "2) all deltas", "3) self paths in JSON format", "4) all deltas + JSON"],
+        description: 'Select the type of data to send to the remote server',
+        default: "1) vessel.self"
+      },
       paths: {
         type: 'array',
-        title: 'Signal K self paths to send',
+        title: 'Signal K self paths to send (JSON format), selection 3) or 4) above',
         default: [{ path: 'navigation.position', interval: 60 }],
         items: {
           type: 'object',
