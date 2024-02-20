@@ -257,19 +257,18 @@ module.exports = function createPlugin(app) {
 
     server.listen(port, function() {
       app.debug('Aedes MQTT server is up and running on port', port)
+      onReady()
     })
 
-    //app.signalk.on('delta', publishLocalDelta);
-    app.signalk.on('delta', function(delta) {
-      publishLocalDelta(delta);
-    });
+    app.signalk.on('delta', publishLocalDelta);
     onStop.push(_ => { app.signalk.removeListener('delta', publishLocalDelta) });
 
-    server.on('clientConnected', function(client) {
+    aedes.on('client', function(client) {
       app.debug('client connected', client.id);
     });
 
-    server.on('published', function(packet, client) {
+    aedes.on('publish', async function(packet, client) {
+      app.debug('Published', packet.topic, packet.payload.toString());
       if (client) {
         var skData = extractSkData(packet);
         if (skData.valid) {
