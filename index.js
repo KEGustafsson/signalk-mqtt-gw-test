@@ -277,8 +277,6 @@ module.exports = function createPlugin(app) {
       }
     });
 
-    server.on('ready', onReady);
-
     function onReady() {
       try {
         const mdns = require('mdns');
