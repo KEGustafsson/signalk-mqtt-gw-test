@@ -284,12 +284,13 @@ module.exports = function createPlugin(app) {
         const mdns = require('mdns');
         ad = mdns.createAdvertisement(mdns.tcp('mqtt'), options.port);
         ad.start();
+        app.debug(
+          'MQTT server is advertised on mDNS as mqtt.tcp://<hostname>:' + options.port
+        );  
       } catch (e) {
         console.error(e.message);
       }
-      app.debug(
-        'Aedes MQTT server is up and running on port ' + options.port
-      );
+
       onStop.push(_ => { 
         server.close()
         aedes.close()

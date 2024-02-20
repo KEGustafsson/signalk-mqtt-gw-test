@@ -14,10 +14,8 @@
   "dependencies": {
     "aedes": "^0.51.0",
     "debug": "^2.3.2",
+    "mdns": "^2.7.2",
     "mqtt": "^5.3.5",
     "mqtt-jsonl-store": "^0.2.1"
-  },
-  "optionalDependencies": {
-    "mdns": "^2.3.3"
   }
 }
