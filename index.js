@@ -60,81 +60,60 @@ module.exports = function createPlugin(app) {
       client.on('error', (err) => console.error(err))
 
       if (options.selectedOption === 'vessel.self delta in separated topics') {
-        console.log('vessel.self delta in separated topics')
-        app.signalk.on('delta', function(delta) {
+        const deltaHandler = function(delta) {
           publishRemoteDelta(delta, client, false);
-        });
+        };
+        app.signalk.on('delta', deltaHandler);
         plugin.onStop.push(_ => {
           client.end()
           stopManager()
-          app.signalk.removeAllListeners('delta')
-        });
-        /*
-        plugin.onStop.push(_ => {
-          stopClient(client)
-          app.signalk.removeListener('delta', publishRemoteDelta)
-        });
-        */
+          app.signalk.removeListener('delta', deltaHandler);
+        });      
       } 
       else if (options.selectedOption === 'all delta in separated topics') {
-        console.log('all delta in separated topics')
-        app.signalk.on('delta', function(delta) {
+        const deltaHandler = function(delta) {
           publishRemoteDelta(delta, client, true);
-        });
+        };
+        app.signalk.on('delta', deltaHandler);
         plugin.onStop.push(_ => {
           client.end()
           stopManager()
-          app.signalk.removeAllListeners('delta')
+          app.signalk.removeListener('delta', deltaHandler);
         });
-        /*
-        plugin.onStop.push(_ => { 
-          stopClient(client)
-          app.signalk.removeListener('delta', publishRemoteDelta)
-        });
-        */
       } 
       else if (options.selectedOption === 'self paths from list below in JSON format') {
-        console.log('self paths from list below in JSON format')
         startSending(options, client, plugin.onStop);
         plugin.onStop.push(_ => {
           client.end()
           stopManager()
         });
-        /*
-        plugin.onStop.push(_ => { 
-          stopClient(client)
-          app.signalk.removeListener('delta', publishRemoteDelta)
-        });
-        */
       } 
       else if (options.selectedOption === 'all data in both formats') {
-        console.log('all data in both formats')
-        app.signalk.on('delta', function(delta) {
-          publishRemoteDelta(delta, client, true);
-        });
         startSending(options, client, plugin.onStop);
+        const deltaHandler = function(delta) {
+          publishRemoteDelta(delta, client, true);
+        };
+        app.signalk.on('delta', deltaHandler);
         plugin.onStop.push(_ => {
           client.end()
           stopManager()
-          app.signalk.removeAllListeners('delta')
+          app.signalk.removeListener('delta', deltaHandler);
         });
-        /*
-        plugin.onStop.push(_ => {
-          stopClient(client)
-          app.signalk.removeListener('delta', publishRemoteDelta)
-        });
-        */
       }
     }    
     started = true;
   };
 
   async function stopManager() {
-    await manager.close();
+    try {
+      await manager.close();
+      app.debug('manager closed')      
+    } catch (error) {}
   }
 
   plugin.stop = function stop() {
-    plugin.onStop.forEach(f => f());      
+    plugin.onStop.forEach(f => f());
+    plugin.onStop = [];
     if (server) {
       server.close();
       aedes.close();
@@ -142,12 +121,6 @@ module.exports = function createPlugin(app) {
     if (ad) {
       ad.stop();
     }
-    plugin = null;
-    /*
-    plugin = {
-      unsubscribes: [],
-    }
-    */
     app.debug("Aedes MQTT Plugin Stopped");
   };
   
@@ -225,7 +198,7 @@ module.exports = function createPlugin(app) {
         app.streambundle
           .getSelfBus(pathInterval.path)
           .debounceImmediate(pathInterval.interval * 1000)
-          .onValue(normalizedPathValue =>
+          .onValue(normalizedPathValue => {
             client.publish(
               'signalk/delta',
               JSON.stringify({
@@ -245,6 +218,7 @@ module.exports = function createPlugin(app) {
               }),
               { qos: 1 }
             )
+          }
           )
       );
     });
@@ -282,7 +256,7 @@ module.exports = function createPlugin(app) {
     const port = options.port || 1883;
 
     server.listen(port, function() {
-      console.log('Aedes MQTT server is up and running on port', port)
+      app.debug('Aedes MQTT server is up and running on port', port)
     })
 
     //app.signalk.on('delta', publishLocalDelta);
@@ -292,7 +266,7 @@ module.exports = function createPlugin(app) {
     onStop.push(_ => { app.signalk.removeListener('delta', publishLocalDelta) });
 
     server.on('clientConnected', function(client) {
-      console.log('client connected', client.id);
+      app.debug('client connected', client.id);
     });
 
     server.on('published', function(packet, client) {
@@ -314,7 +288,7 @@ module.exports = function createPlugin(app) {
       } catch (e) {
         console.error(e.message);
       }
-      console.log(
+      app.debug(
         'Aedes MQTT server is up and running on port ' + options.port
       );
       onStop.push(_ => { 
